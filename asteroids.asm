@@ -26,7 +26,7 @@
                     db '               [ Sair ]             ',13,10 
     menu_inicial2_length EQU $-menu_inicial2
 
-    nave_game   
+    ;nave_game   
 
     estado_programa    db  0    ; 0 - Menu Inicial, 1 - Game, 2 - Fim do Game
     opcao_menu_inicial db  0    ; 0 - Jogar, 1 - Sair'          
@@ -176,31 +176,31 @@
 
         mov     AH, 01h     
         int     16h         
-        jz      nokey
+        jz      nokey_game
         mov     AH, 00h     
         int     16h   
             
         cmp     AL, 0DH     ; botao do teclado enter
-        je      center
+        je      center_game
         
         cmp     AH, 48H     ; seta do teclado para cima
-        je      arrow_up
+        je      arrow_up_game
         
         cmp     AH, 50H     ;  seta do teclado para baixo
-        je      arrow_down
+        je      arrow_down_game
 
-        arrow_up: 
+        arrow_up_game: 
             ; movimenta nave para cima
-            jmp nokey
+            jmp nokey_game
 
-        arrow_down:
+        arrow_down_game:
             ; movimenta nave para baixo
-            jmp nokey
-        center:
+            jmp nokey_game
+        center_game:
             ; atira um projetil
-            jmp nokey
+            jmp nokey_game
 
-        nokey:
+        nokey_game:
 
         pop SI ; Recupera o dado do topo da pilha para o registrador 
         pop DI ; Recupera o dado do topo da pilha para o registrador 
