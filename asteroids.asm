@@ -4,7 +4,7 @@
 
 .data  
 
-   display_menu db '   _       _                 _     _ ',13,10             
+   main_logo_in db '   _       _                 _     _  ',13,10             
                 db '   /_\  ___| |_ ___ _ __ ___ (_) __| |',13,10
                 db '  //_\\/ __| __/ _ | |__/ _ \| |/ _| |',13,10
                 db ' /  _  \__ | ||  __| | | (_) | | (_| |',13,10
@@ -15,180 +15,246 @@
                 db '      \/  \/ \____|\___ |             ',13,10
                 db '                   |___/              ',13,10
                 db '                                      ',13,10
-  displaymenu_length EQU $-display_menu
-  escolher_menu db '               [ Jogar ]              ',13,10
-                db '                 Sair                 ',13,10
-                
-;display_gameover db               ;FIM DE JOGO           '          
 
+    main_logo_in_length EQU $-main_logo_in
+
+    menu_inicial1    db '               [ Jogar ]              ',13,10
+                     db '                  Sair               ',13,10           
+    menu_inicial1_length EQU $-menu_inicial1
+
+    menu_inicial2   db '                Jogar               ',13,10
+                    db '               [ Sair ]             ',13,10 
+    menu_inicial2_length EQU $-menu_inicial2
+
+    nave_game   
+
+    estado_programa    db  0    ; 0 - Menu Inicial, 1 - Game, 2 - Fim do Game
+    opcao_menu_inicial db  0    ; 0 - Jogar, 1 - Sair'          
 
 .code
+    print_logo_inicial PROC
+        push AX
+        push SI
+        push CX
+        push DI
 
-;-==================== PROCS PARA ESCRITA =========================-
+        mov bp, OFFSET main_logo_in  ; ES:BP points to message
+        mov ah, 13h      ; function 13 - write string
+        mov al, 01h      ; attrib in bl,move cursor
+        xor bh, bh       ; video page 0
+        mov bl, 2        ; attribute 
+        mov cx, main_logo_in_length      ; length of string
+        mov dh, 1        ; row to put string
+        mov dl, 1        ; column to put string
+        int 10h         ; call BIOS service
 
-    ; A variavel fica armazenada em SI, na posi??o da memoria DI
-    ; Quantidade de caracterES fica em CX
-    ; PROC feita para escrita de string
-    esc_stringm PROC
-       push ES
-       push BX
+        pop DI
+        pop CX
+        pop SI
+        pop AX
 
-        
-       mov BX, 0h
-       mov ES, BX      
-       loop_string:       
-       lodsb               ; move ES:DI para AL, colocando o proximo caracter em AL
-            mov ES:[DI], AL      ; escreve caracter na mem de video
-            inc DI              ; move para a proxima coluna
-            mov ES:[DI], AH      ; escreve atributo, cor e afins na memoria de video
-            inc DI              ; incrementa
-            
-            loop loop_string  ; repete ate terminar
-        pop BX
-        pop ES
-        
         ret
-    ENDP 
-    
-    ; O Caractere fica armazenado em BL
-    ; PROC feita para escrita char na posi??o da memoria DI 
-    esc_charm PROC
-       push ES
-        
-       mov AX, 0h
-       mov ES, AX                      
-         
-       mov ES:[DI],BL      
-       inc DI           
-       mov ES:[DI],BH    
-       inc DI
-        
-       pop ES
-       ret
-    ENDP
 
-    ; PROC que chama o MENU_INICIO
-    menu_inicio PROC
+    print_logo_inicial ENDP
+
+    print_opcoes_menu_inicial PROC
+        push AX
+        push SI
+        push CX
+        push DI
+                ; Verifica o estado da variável manipulada pelas teclas
+        cmp opcao_menu_inicial, 0
+        je opcao_selecionada_1
+        ; Se a variável é diferente de 0, assume que está opcao_menu_inicial == 1
+        mov SI, OFFSET menu_inicial2
+        mov DI, menu_inicial2_length
+
+        jmp continuar_atualizacao
+
+        opcao_selecionada_1:
+            mov SI, OFFSET menu_inicial1
+            mov DI, menu_inicial2_length
+
+        continuar_atualizacao:
+            mov bp, SI  ; ES:BP points to message
+            mov ah, 13h      ; function 13 - write string
+            mov al, 01h      ; attrib in bl,move cursor
+            xor bh, bh       ; video page 0
+            mov bl, 2        ; attribute 
+            mov cx, DI      ; length of string
+            mov dh, 12        ; row to put string
+            mov dl, 1        ; column to put string
+            int 10h         ; call BIOS service
+
+        pop DI
+        pop CX
+        pop SI
+        pop AX
+
+        ret
+        
+    print_opcoes_menu_inicial ENDP
+
+    trata_display_init PROC
+
+        CALL print_logo_inicial
+        CALL print_opcoes_menu_inicial
+
+        ret
+
+    trata_display_init ENDP
+
+    trata_teclado_menu_inicial PROC
         push AX 
         push SI
         push CX 
         push DI     
         
-        mov bp,OFFSET display_menu  ; ES:BP points to message
-        mov ah,13h      ; function 13 - write string
-        mov al,01h      ; attrib in bl,move cursor
-        xor bh,bh       ; video page 0
-        mov bl,2        ; attribute 
-        mov cx,displaymenu_length      ; length of string
-        mov dh,1        ; row to put string
-        mov dl,1        ; column to put string
-        int 10h         ; call BIOS service
+        ; verifica se alguma tecla foi pressionada
+
+        mov     AH, 01h     
+        int     16h         
+        jz      nokey
+        mov     AH, 00h     
+        int     16h   
             
-        mov bp,OFFSET escolher_menu  ; ES:BP points to message
-        mov ah,13h      ; function 13 - write string
-        mov al,01h      ; attrib in bl,move cursor
-        xor bh,bh       ; video page 0
-        mov bl, 7       ; attribute 
-        mov cx,84       ; length of string
-        mov dh,16        ; row to put string
-        mov dl,00        ; column to put string
-        int 10h         ; call BIOS service
-    
-        jmp arrow_up
-    
-        key_check:
-            mov     AH, 01h     
-            int     16h         
-            jz      nokey
-            mov     AH, 00h     
-            int     16h   
-               
-            cmp     AL, 0DH     ; bot?o do teclado enter
-            je      center
-            
-            cmp     AH, 48H     ; seta do teclado para cima
-            je      arrow_up
-            
-            cmp     AH, 50H     ;  seta do teclado para baixo
-            je      arrow_down
-            
-        nokey:
-            jmp key_check  
+        cmp     AL, 0DH     ; botao do teclado enter
+        je      center
         
-                
-        arrow_up:
-            xor dl, dl          ; Advinda do menu, op??o Sair
-            mov BH, 0FH  
-            mov DI, 456         ; posi??o q deve ir
-            mov BL, '['
-            CALL esc_charm   ; chama PROC de escrita
-            mov DI, 464         ; posi??o q deve ir
-            mov BL, ']'      
-            CALL esc_charm   ; chama PROC de escrita
-            
-            mov DI, 496         ; posi??o q deve ir
-            mov BL, ' '
-            CALL esc_charm   ; chama PROC de escrita
-            mov DI, 503          ; posi??o q deve ir
-            mov BL, ' '
-            CALL esc_charm   ; chama PROC de escrita
-            jmp key_check
-            
+        cmp     AH, 48H     ; seta do teclado para cima
+        je      arrow_up
+        
+        cmp     AH, 50H     ;  seta do teclado para baixo
+        je      arrow_down
+
+        arrow_up: 
+            ; Atualiza a seleção
+            mov opcao_menu_inicial, 0
+            jmp nokey
+
         arrow_down:
-            mov dl, 1         ; Advinda do menu, op??o Sair
-            mov BH, 0FH
-            mov DI, 427       ; posi??o q deve ir
-            mov BL, ' '
-            CALL esc_charm ; chama PROC de escrita
-            mov DI, 436       ; posi??o q deve ir
-            mov BL, ' '
-            CALL esc_charm ; chama PROC de escrita
-            
-            mov DI, 496       ; posi??o q deve ir
-            mov BL, '['
-            CALL esc_charm ; chama PROC de escrita
-            mov DI, 503        ; posi??o q deve ir
-            mov BL, ']'
-            CALL esc_charm ; chama PROC de escrita
-            jmp key_check
-            
+            ; Atualiza a seleção
+            mov opcao_menu_inicial, 1
+            jmp nokey
         center:
-            cmp dl, 0
-            je jogar
-            jmp sair
-            
-        jogar:
-            ;;; deveria chamar a PROC para iniciar o jogo, mas nao consegui sair dessa primeira tela
-        sair:
-        mov AX,4C00h     ; sair para o dos
-        int 21h      ; chamar fun??o dos
-        
+            cmp opcao_menu_inicial, 0
+            je  set_start_game
+
+            mov estado_programa, 2
+            jmp nokey
+
+            set_start_game:
+                mov estado_programa, 1
+
+        nokey:
+
         pop SI ; Recupera o dado do topo da pilha para o registrador 
         pop DI ; Recupera o dado do topo da pilha para o registrador 
         pop AX ; Recupera o dado do topo da pilha para o registrador 
         pop CX ; Recupera o dado do topo da pilha para o registrador 
         
         ret
-    ENDP    
-      
+    trata_teclado_menu_inicial ENDP
+
+    ; Rotina para atualizar a posicao da nave e asteroides...
+    trata_display_game PROC
+
+        ; implementar
+
+        ret
+
+    trata_display_game ENDP
+
+    trata_teclado_game PROC
+
+        push AX 
+        push SI
+        push CX 
+        push DI     
+        
+        ; verifica se alguma tecla foi pressionada
+
+        mov     AH, 01h     
+        int     16h         
+        jz      nokey
+        mov     AH, 00h     
+        int     16h   
+            
+        cmp     AL, 0DH     ; botao do teclado enter
+        je      center
+        
+        cmp     AH, 48H     ; seta do teclado para cima
+        je      arrow_up
+        
+        cmp     AH, 50H     ;  seta do teclado para baixo
+        je      arrow_down
+
+        arrow_up: 
+            ; movimenta nave para cima
+            jmp nokey
+
+        arrow_down:
+            ; movimenta nave para baixo
+            jmp nokey
+        center:
+            ; atira um projetil
+            jmp nokey
+
+        nokey:
+
+        pop SI ; Recupera o dado do topo da pilha para o registrador 
+        pop DI ; Recupera o dado do topo da pilha para o registrador 
+        pop AX ; Recupera o dado do topo da pilha para o registrador 
+        pop CX ; Recupera o dado do topo da pilha para o registrador 
+        
+        ret
+
+    trata_teclado_game ENDP
+
+    ; Rotina para variaveis e parametros de controle do game, exemplo vidas, colisoes, 
+    ; temporizacao dos asteroides, etc... 
+    trata_controle_game PROC
+
+        ; implementar
+
+        ret
+
+    trata_controle_game ENDP
+
     inicio:       
-    
+
         mov AX, @DATA 
         mov ES, AX  
         
         mov AX, @DATA 
         mov DS, AX  
-         
-         
-        mov AX, 13h  ; Programa o modo de video 13h
-        int 10h     ; Interrup??o para chama de servi?o da BIOS
+            
+        mov AX, 13h    ; Programa o modo de video 13h
+        int 10h        ; Interrup??o para chama de servi?o da BIOS
+
+        laco_principal:
+            cmp estado_programa, 2
+            je end_game
+
+            cmp estado_programa, 1
+            je laco_game
+
+            ; Laco de controle do menu inicial
+            CALL trata_display_init
+            CALL trata_teclado_menu_inicial
+
+            jmp laco_principal 
+
+            laco_game:
+                CALL trata_display_game
+                CALL trata_teclado_game
+                CALL trata_controle_game
+
+            jmp laco_principal  
         
-        
-        CALL menu_inicio   
-        
-        
-        ; sair de que jeito
-        mov AX, 4C00h     ; sair para o DOS
-        int 21h      ; chamar fun??o DOS
-         
-end inicio
+        ; Rotulo para finalizar o programa
+        end_game:
+            mov AX, 4C00h     ; sair para o DOS
+            int 21h           ; chamar fun??o DOS
+            
+    end inicio
