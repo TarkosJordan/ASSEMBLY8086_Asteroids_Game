@@ -15,15 +15,15 @@
                 db '      \/  \/ \____|\___ |             ',13,10
                 db '                   |___/              ',13,10
                 db '                                      ',13,10
-
+                
     main_logo_in_length EQU $-main_logo_in
 
-    menu_inicial1    db '               [ Jogar ]              ',13,10
+    menu_inicial1    db '               [ Jogar ]             ',13,10
                      db '                  Sair               ',13,10           
     menu_inicial1_length EQU $-menu_inicial1
 
-    menu_inicial2   db '                Jogar               ',13,10
-                    db '               [ Sair ]             ',13,10 
+    menu_inicial2    db '                 Jogar               ',13,10
+                     db '                [ Sair  ]            ',13,10 
     menu_inicial2_length EQU $-menu_inicial2
 
     ;nave_game   
@@ -62,10 +62,10 @@
         push SI
         push CX
         push DI
-                ; Verifica o estado da variável manipulada pelas teclas
+                ; Verifica o estado da vari??vel manipulada pelas teclas
         cmp opcao_menu_inicial, 0
         je opcao_selecionada_1
-        ; Se a variável é diferente de 0, assume que está opcao_menu_inicial == 1
+        ; Se a vari??vel ?? diferente de 0, assume que est?? opcao_menu_inicial == 1
         mov SI, OFFSET menu_inicial2
         mov DI, menu_inicial2_length
 
@@ -128,12 +128,12 @@
         je      arrow_down
 
         arrow_up: 
-            ; Atualiza a seleção
+            ; Atualiza a sele????o
             mov opcao_menu_inicial, 0
             jmp nokey
 
         arrow_down:
-            ; Atualiza a seleção
+            ; Atualiza a sele????o
             mov opcao_menu_inicial, 1
             jmp nokey
         center:
