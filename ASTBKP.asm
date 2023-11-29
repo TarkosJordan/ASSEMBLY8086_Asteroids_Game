@@ -53,7 +53,7 @@
               db 00h,0Ch,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,00h,00h
               db 00h,0Fh,0Fh,0Fh,0Fh,00h,00h,00h,00h,00h
               db 0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,00h,00h,00h,00h
-              db 0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Ch,0Ch,00h,00h
+              db 0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Ch,0Ch,00h,00h          
               
     asteroide db 00h,00h,00h,07h,07h,07h,00h,00h,00h,00h
               db 00h,00h,00h,07h,07h,07h,00h,00h,00h,00h
@@ -88,66 +88,118 @@
               db 00h,00h,00h,0Ah,0Ah,0Ah,00h,00h,00h,00h
               db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h 
               
-    pos_yo_asteroidemenu equ 140  ; Substitua 10 pelo valor desejado
+   saude_game db 00h,00h,00h,0Ah,0Ah,0Ah,00h,00h,00h,00h
+              db 00h,00h,00h,0Ah,0Ah,0Ah,00h,00h,00h,00h
+              db 00h,00h,00h,0Ah,0Ah,0Ah,00h,00h,00h,00h
+              db 0Ah,0Ah,0Ah,02h,02h,02h,0Ah,0Ah,0Ah,00h
+              db 0Ah,0Ah,0Ah,02h,02h,02h,0Ah,0Ah,0Ah,00h
+              db 0Ah,0Ah,0Ah,02h,02h,02h,0Ah,0Ah,0Ah,00h
+              db 00h,00h,00h,0Ah,0Ah,0Ah,00h,00h,00h,00h
+              db 00h,00h,00h,0Ah,0Ah,0Ah,00h,00h,00h,00h
+              db 00h,00h,00h,0Ah,0Ah,0Ah,00h,00h,00h,00h
+              db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h               
+              
+    pos_yo_navegame equ 119  ; pos y nave dentro do jogar
+    pos_xo_navegame equ 90    ; pos x nave dentro do jogar    
+     
+    altura_navegame equ 10 
+    largura_navegame equ 10
+    
+    pos_yo_asteroidemenu equ 140  
     pos_xo_asteroidemenu equ 125                    
 
-    pos_yo_navemenu equ 140  ; Substitua 10 pelo valor desejado
+    pos_yo_navemenu equ 140 
     pos_xo_navemenu equ 65        
     
-    pos_yo_escudomenu equ 140  ; Substitua 10 pelo valor desejado
+    pos_yo_escudomenu equ 140  
     pos_xo_escudomenu equ 185     
 
-    pos_yo_saudemenu equ 140  ; Substitua 10 pelo valor desejado
+    pos_yo_saudemenu equ 140  
     pos_xo_saudemenu equ 245       
                             
-    altura_nave equ 10  ; Substitua 5 pelo valor desejado
+    altura_nave equ 10  
     largura_nave equ 10
     
-    altura_asteroide equ 10  ; Substitua 5 pelo valor desejado
+    altura_asteroide equ 10  
     largura_asteroide equ 10
    
-    altura_escudo equ 10  ; Substitua 5 pelo valor desejado
+    altura_escudo equ 10  
     largura_escudo equ 10
     
-    altura_saude equ 10  ; Substitua 5 pelo valor desejado
+    altura_saude equ 10  
     largura_saude equ 10
 .code
-    ; MONTA NAVES teste -----------------------------------------------------------------------------------------------
-  
+   
+monta_navegame proc
+
+    mov SI, offset nave 
+    mov CL, pos_xo_navegame 
+    mov CH, pos_yo_navegame
+    
+    mov BH, 0
+    mov DH, 0
+    
+    mov BL, 0 ; para contar largura
+    mov DL, 0 ; conta altura
+    
+    loop_linha_monta_navegame:
+        cmp DL, altura_navegame ; compara para ver se a linha é igual a altura
+        je fim_monta_navegame
+        mov CL, pos_xo_navegame ; se nao, volta pra xo_navegame
+        mov BL, 0   ; reset da largura armazenada
+    
+    loop_coluna_monta_navegame:
+        mov AH, 0Ch
+        mov AL, [si]
+        mov BH, 00h
+        
+        inc CL ; vai botando na sequencia da direita com a função incrementar
+        int 10h
+        inc SI
+        inc BL ; incrementa um em BL=largura
+        cmp BL, largura_navegame
+        jne loop_coluna_monta_navegame
+        
+        inc DL ; incrementa DL=altura
+        jmp loop_linha_monta_navegame
+        
+    fim_monta_navegame:
+        ret
+endp  
+    
 monta_nave proc
 
     mov SI, offset nave
+    mov CL, pos_xo_navemenu 
+    mov CH, pos_yo_navemenu 
     
-    mov CH, pos_yo_navemenu ; posicao y
-    mov CL, pos_xo_navemenu ; posicao x
-    
-    mov BL, 0 ; contador largura
-    mov DL, 0 ; contador altura
     mov DH, 0
-    mov BH, 0
+    mov BH, 0    
+    
+    mov BL, 0 
+    mov DL, 0 
     
     loop_linha_monta_nave:
-        cmp DL, altura_nave ; verifica se a linha e igual a altura
+        cmp DL, altura_nave 
         je fim_monta_nave
-        mov CL, pos_xo_navemenu ; se nao for igual, volta para o x inicial
-        mov BL, 0   ; reseta a largura
+        
+        mov CL, pos_xo_navemenu 
+        mov BL, 0   
     
     loop_coluna_monta_nave:
         mov AH, 0Ch
         mov AL, [si]
         mov BH, 00h
         
-        inc CL ; incrementa, logo movimenta para o lado direito
+        inc CL 
         int 10h
-        inc BL ; conta um na largura
         inc SI
+        inc BL 
         cmp BL, largura_nave
         jne loop_coluna_monta_nave
         
-        inc DL ; conta uma linha
-        
-        jmp loop_linha_monta_nave
-        
+        inc DL 
+        jmp loop_linha_monta_nave    
     fim_monta_nave:
         ret
 endp
@@ -155,35 +207,34 @@ endp
 monta_asteroide proc
 
     mov SI, offset asteroide
+    mov CL, pos_xo_asteroidemenu 
+    mov CH, pos_yo_asteroidemenu 
     
-    mov CH, pos_yo_asteroidemenu ; posicao y
-    mov CL, pos_xo_asteroidemenu ; posicao x
+    mov BL, 0 
+    mov DL, 0 
     
-    mov BL, 0 ; contador largura
-    mov DL, 0 ; contador altura
     mov DH, 0
     mov BH, 0
     
     loop_linha_monta_asteroide:
-        cmp DL, altura_asteroide ; verifica se a linha e igual a altura
+        cmp DL, altura_asteroide 
         je fim_monta_asteroide
-        mov CL, pos_xo_asteroidemenu ; se nao for igual, volta para o x inicial
-        mov BL, 0   ; reseta a largura
+        mov CL, pos_xo_asteroidemenu 
+        mov BL, 0   
     
     loop_coluna_monta_asteroide:
         mov AH, 0Ch
         mov AL, [si]
         mov BH, 00h
         
-        inc CL ; incrementa, logo movimenta para o lado direito
+        inc CL 
         int 10h
-        inc BL ; conta um na largura
         inc SI
+        inc BL 
         cmp BL, largura_asteroide
         jne loop_coluna_monta_asteroide
         
-        inc DL ; conta uma linha
-        
+        inc DL   
         jmp loop_linha_monta_asteroide
         
     fim_monta_asteroide:
@@ -193,37 +244,35 @@ endp
 monta_escudo proc
 
     mov SI, offset escudo
-    
-    mov CH, pos_yo_escudomenu ; posicao y
-    mov CL, pos_xo_escudomenu ; posicao x
-    
-    mov BL, 0 ; contador largura
-    mov DL, 0 ; contador altura
+    mov CL, pos_xo_escudomenu     
+    mov CH, pos_yo_escudomenu 
+
     mov DH, 0
     mov BH, 0
     
+    mov BL, 0 
+    mov DL, 0 
+    
     loop_linha_monta_escudo:
-        cmp DL, altura_escudo ; verifica se a linha e igual a altura
+        cmp DL, altura_escudo 
         je fim_monta_escudo
-        mov CL, pos_xo_escudomenu ; se nao for igual, volta para o x inicial
-        mov BL, 0   ; reseta a largura
+        mov CL, pos_xo_escudomenu 
+        mov BL, 0  
     
     loop_coluna_monta_escudo:
         mov AH, 0Ch
         mov AL, [si]
         mov BH, 00h
         
-        inc CL ; incrementa, logo movimenta para o lado direito
+        inc CL 
         int 10h
-        inc BL ; conta um na largura
         inc SI
+        inc BL 
         cmp BL, largura_escudo
         jne loop_coluna_monta_escudo
         
-        inc DL ; conta uma linha
-        
+        inc DL 
         jmp loop_linha_monta_escudo
-        
     fim_monta_escudo:
         ret
 endp
@@ -231,35 +280,34 @@ endp
 monta_saude proc
 
     mov SI, offset saude
+    mov CL, pos_xo_saudemenu
+    mov CH, pos_yo_saudemenu 
     
-    mov CH, pos_yo_saudemenu ; posicao y
-    mov CL, pos_xo_saudemenu ; posicao x
-    
-    mov BL, 0 ; contador largura
-    mov DL, 0 ; contador altura
     mov DH, 0
     mov BH, 0
     
+    mov BL, 0 
+    mov DL, 0 
+    
     loop_linha_monta_saude:
-        cmp DL, altura_saude ; verifica se a linha e igual a altura
+        cmp DL, altura_saude 
         je fim_monta_saude
-        mov CL, pos_xo_saudemenu ; se nao for igual, volta para o x inicial
-        mov BL, 0   ; reseta a largura
+        mov CL, pos_xo_saudemenu 
+        mov BL, 0  
     
     loop_coluna_monta_saude:
         mov AH, 0Ch
         mov AL, [si]
         mov BH, 00h
         
-        inc CL ; incrementa, logo movimenta para o lado direito
+        inc CL 
         int 10h
-        inc BL ; conta um na largura
         inc SI
+        inc BL 
         cmp BL, largura_saude
         jne loop_coluna_monta_saude
         
-        inc DL ; conta uma linha
-        
+        inc DL 
         jmp loop_linha_monta_saude
         
     fim_monta_saude:
@@ -267,7 +315,6 @@ monta_saude proc
 endp
 
 
-    ; MONTA NAVES -----------------------------------------------------------------------------------------------
     print_logo_inicial PROC
 
         push AX
@@ -275,16 +322,16 @@ endp
         push CX
         push DI
 
-        mov bp, OFFSET main_logo_in  ; ES:BP points to message
-        mov ah, 13h      ; function 13 - write string
-        mov al, 01h      ; attrib in bl,move cursor
-        xor bh, bh       ; video page 0
+        mov bp, OFFSET main_logo_in  ; ES:BP MENSAGEM
+        mov ah, 13h      ; int 13h - escreve string
+        mov al, 01h      ; atributo em bl, move cursor
+        xor bh, bh       ; pagina de video 0
         mov bl, 0AH        ; attribute 
-        mov cx, main_logo_in_length      ; length of string
-        mov dh, 1        ; row to put string
-        mov dl, 1        ; column to put string
-        int 10h         ; call BIOS service
-
+        mov cx, main_logo_in_length      ; tamanho da string
+        mov dh, 1        ; linha string
+        mov dl, 1        ; coluna string
+        int 10h         ; chama bios
+        
         pop DI
         pop CX
         pop SI
@@ -313,15 +360,15 @@ endp
             mov DI, menu_inicial2_length
 
         continuar_atualizacao:
-            mov bp, SI  ; ES:BP points to message
-            mov ah, 13h      ; function 13 - write string
-            mov al, 01h      ; attrib in bl,move cursor
-            xor bh, bh       ; video page 0
-            mov bl, 0FH        ; attribute 
-            mov cx, DI      ; length of string
-            mov dh, 12        ; row to put string
-            mov dl, 1        ; column to put string
-            int 10h         ; call BIOS service
+            mov bp, SI  
+            mov ah, 13h      
+            mov al, 01h      
+            xor bh, bh      
+            mov bl, 0FH      
+            mov cx, DI      
+            mov dh, 12       
+            mov dl, 1       
+            int 10h       
 
         pop DI
         pop CX
@@ -393,13 +440,37 @@ endp
         ret
     trata_teclado_menu_inicial ENDP
 
-    ; Rotina para atualizar a posicao da nave e asteroides...
-    trata_display_game PROC
-
-        ; implementar
-
+    inicializa_itens PROC
+        push SI
+            CALL monta_navegame
+            ; CALL monta_escudo
+            ; CALL monta_saude
+            ; CALL monta_asteroide       
+        
+        pop SI 
         ret
+    endp
+ 
+    ; Rotina para tb atualizar a posicao da nave e asteroides...
+    trata_display_game PROC
+        push AX
+        push CX
 
+        call set_video_mode
+      ;  call inicializa_itens
+        call monta_navegame
+        xor CX, CX
+
+          PLAY_LOOP:
+            ;call VALIDATE
+;                    call MOVE_NAVE
+            ;call CALCULATE_SPEED
+            ;           cmp CX, AX
+            ;jb CONTINUE_PLAY
+
+         ; pop CX
+          ;  pop AX
+        ret
     trata_display_game ENDP
 
     trata_teclado_game PROC
@@ -458,6 +529,17 @@ endp
 
     trata_controle_game ENDP
 
+    ; SET VIDEO MODE -----------------------------------------------------------------------------------------------
+    set_video_mode proc ; Modo v?deo 13H (320x200)
+        push AX
+        
+        mov AX, 13h     ; programa modo 13h
+        int 10h         ; chamada de servi?o bios
+
+        pop AX
+        ret
+    endp    
+    
     inicio:       
 
         mov AX, @DATA 
@@ -466,9 +548,7 @@ endp
         mov AX, @DATA 
         mov DS, AX  
             
-        mov AX, 13h    ; Programa o modo de video 13h
-        int 10h        ; Interrup??o para chama de servi?o da BIOS
-
+        CALL set_video_mode
         laco_principal:
             cmp estado_programa, 2
             je end_game
