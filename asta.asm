@@ -99,7 +99,7 @@
               db 00h,00h,00h,0Ah,0Ah,0Ah,00h,00h,00h,00h
               db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h               
               
-    pos_y_navegame  dw 119    ; posicao y nave dentro do jogo (variavel atualizada pelas teclas up e down)
+    pos_y_navegame  dw 100    ; posicao y nave dentro do jogo (variavel atualizada pelas teclas up e down)
     pos_xo_navegame equ 90    ; posicao x nave dentro do jogo (constante nave soh se moviementa para cima e para baixo)
 
     ; Define o limite inferior e superior em y do posicionamento da nave
@@ -113,18 +113,6 @@
     altura_nave equ 10  
     largura_nave equ 10
 
-    pos_yo_asteroidemenu equ 140  
-    pos_xo_asteroidemenu equ 125                    
-
-    pos_yo_navemenu equ 140 
-    pos_xo_navemenu equ 65        
-    
-    pos_yo_escudomenu equ 140  
-    pos_xo_escudomenu equ 185     
-
-    pos_yo_saudemenu equ 140  
-    pos_xo_saudemenu equ 245       
-                            
     altura_asteroide equ 10  
     largura_asteroide equ 10
    
@@ -133,6 +121,14 @@
     
     altura_saude equ 10  
     largura_saude equ 10
+
+    pos_yo_itens_menu_inicial equ 110
+     
+    pos_xo_asteroidemenu equ 125                    
+    pos_xo_navemenu equ 65        
+    pos_xo_escudomenu equ 185     
+    pos_xo_saudemenu equ 245       
+                            
 .code
 
 ; Funcao deve popular registradores cx e dx, sendo dx os 16 bits menos significativos e o cx 
@@ -213,154 +209,6 @@ movimenta_obj_baixo proc
     ret
 endp
     
-monta_nave proc
-
-    mov SI, offset nave
-    mov CL, pos_xo_navemenu 
-    mov CH, pos_yo_navemenu 
-    
-    mov DH, 0
-    mov BH, 0    
-    
-    mov BL, 0 
-    mov DL, 0 
-    
-    loop_linha_monta_nave:
-        cmp DL, altura_nave 
-        je fim_monta_nave
-        
-        mov CL, pos_xo_navemenu 
-        mov BL, 0   
-    
-    loop_coluna_monta_nave:
-        mov AH, 0Ch
-        mov AL, [si]
-        mov BH, 00h
-        
-        inc CL 
-        int 10h
-        inc SI
-        inc BL 
-        cmp BL, largura_nave
-        jne loop_coluna_monta_nave
-        
-        inc DL 
-        jmp loop_linha_monta_nave    
-    fim_monta_nave:
-        ret
-endp
-
-monta_asteroide proc
-
-    mov SI, offset asteroide
-    mov CL, pos_xo_asteroidemenu 
-    mov CH, pos_yo_asteroidemenu 
-    
-    mov BL, 0 
-    mov DL, 0 
-    
-    mov DH, 0
-    mov BH, 0
-    
-    loop_linha_monta_asteroide:
-        cmp DL, altura_asteroide 
-        je fim_monta_asteroide
-        mov CL, pos_xo_asteroidemenu 
-        mov BL, 0   
-    
-    loop_coluna_monta_asteroide:
-        mov AH, 0Ch
-        mov AL, [si]
-        mov BH, 00h
-        
-        inc CL 
-        int 10h
-        inc SI
-        inc BL 
-        cmp BL, largura_asteroide
-        jne loop_coluna_monta_asteroide
-        
-        inc DL   
-        jmp loop_linha_monta_asteroide
-        
-    fim_monta_asteroide:
-        ret
-endp
-
-monta_escudo proc
-
-    mov SI, offset escudo
-    mov CL, pos_xo_escudomenu     
-    mov CH, pos_yo_escudomenu 
-
-    mov DH, 0
-    mov BH, 0
-    
-    mov BL, 0 
-    mov DL, 0 
-    
-    loop_linha_monta_escudo:
-        cmp DL, altura_escudo 
-        je fim_monta_escudo
-        mov CL, pos_xo_escudomenu 
-        mov BL, 0  
-    
-    loop_coluna_monta_escudo:
-        mov AH, 0Ch
-        mov AL, [si]
-        mov BH, 00h
-        
-        inc CL 
-        int 10h
-        inc SI
-        inc BL 
-        cmp BL, largura_escudo
-        jne loop_coluna_monta_escudo
-        
-        inc DL 
-        jmp loop_linha_monta_escudo
-    fim_monta_escudo:
-        ret
-endp
-
-monta_saude proc
-
-    mov SI, offset saude
-    mov CL, pos_xo_saudemenu
-    mov CH, pos_yo_saudemenu 
-    
-    mov DH, 0
-    mov BH, 0
-    
-    mov BL, 0 
-    mov DL, 0 
-    
-    loop_linha_monta_saude:
-        cmp DL, altura_saude 
-        je fim_monta_saude
-        mov CL, pos_xo_saudemenu 
-        mov BL, 0  
-    
-    loop_coluna_monta_saude:
-        mov AH, 0Ch
-        mov AL, [si]
-        mov BH, 00h
-        
-        inc CL 
-        int 10h
-        inc SI
-        inc BL 
-        cmp BL, largura_saude
-        jne loop_coluna_monta_saude
-        
-        inc DL 
-        jmp loop_linha_monta_saude
-        
-    fim_monta_saude:
-        ret
-endp
-
-
 print_logo_inicial PROC
 
     push AX
@@ -387,6 +235,30 @@ print_logo_inicial PROC
 
 print_logo_inicial ENDP
 
+print_objetos_menu_inicial proc
+       ; print escudo
+        mov si, offset escudo
+        mov ax, pos_yo_itens_menu_inicial
+        mov bx, pos_xo_escudomenu
+        call desenha_objeto 
+        ; print saude 
+        mov si, offset saude
+        mov ax, pos_yo_itens_menu_inicial
+        mov bx, pos_xo_saudemenu
+        call desenha_objeto       
+        ; print asteroide
+        mov si, offset asteroide
+        mov ax, pos_yo_itens_menu_inicial
+        mov bx, pos_xo_asteroidemenu     
+        call desenha_objeto
+        ; print nave
+        mov si, offset nave
+        mov ax, pos_yo_itens_menu_inicial
+        mov bx, pos_xo_navemenu     
+        call desenha_objeto
+    ret
+print_objetos_menu_inicial endp
+
 print_opcoes_menu_inicial PROC
     push AX
     push SI
@@ -396,7 +268,7 @@ print_opcoes_menu_inicial PROC
     ; Verifica o estado da variavel manipulada pelas teclas
     cmp opcao_menu_inicial, 0
     je opcao_selecionada_1
-    ; Se a varialvel ?? diferente de 0, assume que est?? opcao_menu_inicial == 1
+    ; Se a varialvel eh diferente de 0, assume-se que opcao_menu_inicial == 1
     mov SI, OFFSET menu_inicial2
     mov DI, menu_inicial2_length
 
@@ -427,12 +299,12 @@ print_opcoes_menu_inicial PROC
 print_opcoes_menu_inicial ENDP
 
 trata_display_init PROC
-
-    CALL print_logo_inicial
-    CALL print_opcoes_menu_inicial
+    
+    call print_logo_inicial
+    call print_objetos_menu_inicial
+    call print_opcoes_menu_inicial
 
     ret
-
 trata_display_init ENDP
 
 trata_teclado_menu_inicial PROC
@@ -608,6 +480,7 @@ inicio:
         
     CALL set_video_mode
 
+    ; Laco de controle do menu inicial
     laco_principal:
         cmp estado_programa, 2
         je end_game
@@ -618,11 +491,6 @@ inicio:
         cmp estado_programa, 3
         je laco_game
 
-        ; Laco de controle do menu inicial
-        CALL monta_escudo
-        CALL monta_saude
-        CALL monta_asteroide
-        CALL monta_nave
         CALL trata_display_init
         CALL trata_teclado_menu_inicial
 
