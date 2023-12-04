@@ -37,14 +37,35 @@
                      db '                  Jogar             ',13,10
                      db '                [ Sair  ]           ',13,10 
     menu_inicial2_length EQU $-menu_inicial2
-
-    estado_programa    db  0    ; 0 - Menu Inicial, 1 - Game, 2 - Fim do Game
-    opcao_menu_inicial db  0    ; 0 - Jogar, 1 - Sair'
-
-    lsb_delay_us       dw  50000 ; byte carregado na funcao de delay em microsegundos
-    msb_delay_us       dw      0 ; byte carregado na funcao de delay em microsegundos
     
-    ; Fundo amarelo da barre de status 8x80pixels
+    ; Lista de definicoes para a variavel 'estado_programa'
+    dMENU_INICIAL     equ  0
+    dGAME_START       equ  1
+    dGAME_RUN         equ  2
+    dSAIR_DO_JOGO     equ  3
+    dGAME_LOSE        equ  4
+    dGAME_WIN         equ  5
+
+    estado_programa    db  dMENU_INICIAL
+
+    ; Lista de definicoes para a variavel 'opcao_menu_inicial'
+    dOPCAO_JOGAR       equ 0
+    dOPCAO_SAIR        equ 1
+
+    opcao_menu_inicial db  dOPCAO_JOGAR
+
+    lsb_delay_us       dw   1000 ; byte carregado na funcao de delay em microsegundos
+    msb_delay_us       dw      0 ; byte carregado na funcao de delay em microsegundos
+        
+    counter_time_base           dw   0   ; auxiliar de contagem para base de tempo
+    flag_passou_segundo         db   0   ; indica que passou-se 1 seg do jogo
+    counter_seg_fase            db   0   ; tempo dinamico passado em cada fase
+    segundos_por_fase          equ   1
+
+    fase_atual                  db   0
+    quantidade_fases_game      equ  10
+    
+    ; Fundo amarelo da barre de status (8x80)px
     fundo_status_bar    db 0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh
                         db 0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh
                         db 0Eh,0Eh,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,09h,0Eh,0Eh,0Ch,0Ch,0Ch,0Ch,0Eh,0Eh,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Eh,0Eh
@@ -146,6 +167,7 @@
 
 ; Funcao deve popular registradores cx e dx, sendo dx os 16 bits menos significativos e o cx 
 ; os 16 bits mais significativos da contagem em microsegundos do delay
+; fixo em 1000us = 1ms
 delay_microsegundos proc
     push cx
     push dx
@@ -209,7 +231,7 @@ movimenta_obj_cima proc
 
     pop ds      ; restaurar contexto do data segment
     ret
-endp
+movimenta_obj_cima endp
 
 movimenta_obj_baixo proc
     push ds     ; salvar contexto do data segment
@@ -220,7 +242,7 @@ movimenta_obj_baixo proc
 
     pop ds      ; restaurar contexto do data segment
     ret
-endp
+movimenta_obj_baixo endp
 
 ; Params SI -> endereco do objeto
 ;        AX -> pixel linha
@@ -256,7 +278,7 @@ print_status_bar proc
         pop ds
 
     ret
-endp
+print_status_bar endp
     
 print_logo_inicial PROC
 
@@ -315,9 +337,10 @@ print_opcoes_menu_inicial PROC
     push DI
 
     ; Verifica o estado da variavel manipulada pelas teclas
-    cmp opcao_menu_inicial, 0
+    cmp opcao_menu_inicial, dOPCAO_JOGAR
     je opcao_selecionada_1
-    ; Se a varialvel eh diferente de 0, assume-se que opcao_menu_inicial == 1
+
+    ; Se a varialvel eh diferente de 0, assume-se que opcao_menu_inicial == dOPCAO_SAIR
     mov SI, OFFSET menu_inicial2
     mov DI, menu_inicial2_length
 
@@ -380,22 +403,22 @@ trata_teclado_menu_inicial PROC
 
     arrow_up: 
         ; Atualiza a selecao
-        mov opcao_menu_inicial, 0
+        mov opcao_menu_inicial, dOPCAO_JOGAR
         jmp nokey
 
     arrow_down:
         ; Atualiza a selecao
-        mov opcao_menu_inicial, 1
+        mov opcao_menu_inicial, dOPCAO_SAIR
         jmp nokey
     center:
-        cmp opcao_menu_inicial, 0
+        cmp opcao_menu_inicial, dOPCAO_JOGAR
         je  set_start_game
 
-        mov estado_programa, 2
+        mov estado_programa, dSAIR_DO_JOGO
         jmp nokey
 
         set_start_game:
-            mov estado_programa, 1
+            mov estado_programa, dGAME_START
 
     nokey:
 
@@ -410,7 +433,10 @@ trata_teclado_menu_inicial ENDP
 ; Rotina para tb atualizar a posicao da nave e asteroides...
 trata_display_game PROC
 
-    ;call set_video_mode
+        mov si, offset nave
+        mov ax, pos_y_navegame
+        mov bx, pos_xo_navegame
+        call desenha_objeto
 
     ret
 
@@ -441,30 +467,26 @@ trata_teclado_game PROC
 
     arrow_up_game: 
         ; testa o limite de tamanho da tela
-        mov AX, pos_y_navegame
-        cmp AX, lim_superior_nave
+        cmp pos_y_navegame, lim_superior_nave
         ; se for maior ou igual ao limite superior da tela movimenta
         jge atualiza_pos_nave_cima
         jmp nokey_game
 
         ; movimenta nave para cima
         atualiza_pos_nave_cima:
-            sub AX, 1
-            mov pos_y_navegame, AX
+            dec pos_y_navegame
             jmp nokey_game
 
     arrow_down_game:
         ; testa o limite de tamanho da tela
-        mov AX, pos_y_navegame
-        cmp AX, lim_inferior_nave 
+        cmp pos_y_navegame, lim_inferior_nave 
         ; se for menor ou igual ao limite inferior da tela movimenta
         jle atualiza_pos_nave_baixo
         jmp nokey_game
 
         ; movimenta nave para baixo
         atualiza_pos_nave_baixo:
-            add AX, 1
-            mov pos_y_navegame, AX
+            inc pos_y_navegame
             jmp nokey_game
 
     center_game:
@@ -496,28 +518,62 @@ movimenta_nave_baixo proc
 
     pop ds    
     ret
-endp
+movimenta_nave_baixo endp
 
-; Rotina para variaveis e parametros de controle do game, exemplo vidas, colisoes, 
-; temporizacao dos asteroides, etc... 
-trata_controle_game PROC
+trata_tempo_game proc
 
-    ; implementar
+    ; Base de tempo (tick de 1ms)
+    call delay_microsegundos  
+    inc counter_time_base
+    cmp counter_time_base, 1000       ; 1000 ticks de 1ms = 1 segundo
+    je trata_segundo_passado
+    jmp fim_trata_tempo
+
+    trata_segundo_passado:
+        mov counter_time_base, 0    ; zera o counter base para 1 segundo
+        inc counter_seg_fase
+        cmp counter_seg_fase, segundos_por_fase
+        je incrementa_fase
+        jmp fim_trata_tempo
+
+    incrementa_fase:
+        mov counter_seg_fase, 0     ; nova fase, zera os segundos decorridos da fase
+        inc fase_atual
+
+    fim_trata_tempo:
 
     ret
+trata_tempo_game endp
 
+; Rotina para variaveis e parametros de controle do game, exemplo vidas, colisoes, 
+; gerenciamento dos asteroides, etc... 
+trata_controle_game PROC
+    call trata_tempo_game
+
+    cmp fase_atual, quantidade_fases_game
+    je venceu_game
+    jmp continua_trata_controle
+
+    venceu_game:
+        mov estado_programa, dMENU_INICIAL          ; dGAME_WIN         ; Trocar depois de criar o estado
+        call set_video_mode
+        jmp fim_trata_controle
+
+    continua_trata_controle:
+
+    fim_trata_controle:
+    ret
 trata_controle_game ENDP
 
-; SET VIDEO MODE -----------------------------------------------------------------------------------------------
-set_video_mode proc ; Modo video 13H (320x200)
+set_video_mode proc     ; Modo video 13H (320x200)
     push AX
     
-    mov AX, 13h     ; programa modo 13h
-    int 10h         ; chamada de servi?o bios
+    mov AX, 13h         ; programa modo 13h
+    int 10h             ; chamada de servi?o bios
 
     pop AX
     ret
-endp    
+set_video_mode endp    
 
 inicio:       
 
@@ -531,21 +587,22 @@ inicio:
 
     ; Laco de controle do menu inicial
     laco_principal:
-        cmp estado_programa, 2
+        cmp estado_programa, dSAIR_DO_JOGO
         je end_game
 
-        cmp estado_programa, 1
-        je limpa_tela
+        cmp estado_programa, dGAME_START
+        je start_game
         
-        cmp estado_programa, 3
-        je laco_game
+        cmp estado_programa, dGAME_RUN
+        je game_run
 
+        ; Caso contrario 'estado_programa = dMENU_INICIAL'
         CALL trata_display_init
         CALL trata_teclado_menu_inicial
 
         jmp laco_principal 
 
-        limpa_tela:
+        start_game:
             CALL set_video_mode
 
             ; Desenha a nave a primeira vez
@@ -554,23 +611,19 @@ inicio:
             mov bx, pos_xo_navegame
             call desenha_objeto
 
+            ; Desenha status bar (vida e tempo)
             mov si, offset fundo_status_bar
             mov ax, pos_yo_status_bar
             mov bx, pos_xo_status_bar
             call print_status_bar
 
-            mov estado_programa, 3
+            mov estado_programa, dGAME_RUN
         jmp laco_principal
 
-        laco_game:
-            ;CALL trata_display_game
-            CALL trata_teclado_game
-            mov si, offset nave
-            mov ax, pos_y_navegame
-            mov bx, pos_xo_navegame
-            call desenha_objeto
-            ;CALL trata_controle_game
-            ;CALL delay_microsegundos
+        game_run:
+            call trata_display_game
+            call trata_teclado_game
+            call trata_controle_game
 
         jmp laco_principal  
     
